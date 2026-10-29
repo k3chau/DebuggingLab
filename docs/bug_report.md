@@ -130,5 +130,42 @@ I was searching for the best score and I knew that the route for getting the sta
 
 ### Confirming the fix
 
-After I replaced the spelling, it started showing the greatest score
+After I replaced the spelling, it started showing the greatest score.
+
+## Ticket 3: Lemon only jumps to the corners
+
+### Actual cause
+
+**File / function:** `src/screens/GameScreen/GameScreenView.ts` / `randomizeLemonPosition()`
+
+**What was wrong:** `Math.round` was wrapped around only `Math.random()`. `Math.random()` returns a decimal from 0 up to 1, and rounding that decimal gives only 0 or 1. That 0 or 1 was then multiplied by the allowed range. So `randomX` was only ever `minX` or `maxX`, and `randomY` was only ever `minY` or `maxY`. The lemon could only appear at the four corners of the padded area.
+
+### Fix
+
+I moved the parentheses so `Math.round` wraps the whole position, not just `Math.random()`:
+
+`Math.round(Math.random() * (maxX - minX) + minX)`
+
+`Math.random()` is scaled across the range from `minX` to `maxX` first, and then that result is rounded to a pixel. The same change was made for `randomY`.
+
+### How did you find it?
+
+Clicking the lemon was supposed to move it to a random spot, but it only showed up at the corners. I looked at `randomizeLemonPosition()`, which is what runs after a click, and checked how `randomX` and `randomY` were calculated.
+
+#### Hypothesis testing
+
+**What hypothesis ultimately led you to identify the buggy code, and why?**
+
+I thought the random formula was collapsing to the edges. `Math.round(Math.random())` is 0 about half the time and 1 the other half, so multiplying that by `(maxX - minX)` only produces the left limit or the right limit. That matches a lemon that only jumps to the corners.
+
+#### Backward tracing
+
+1. **Symptom:** After a click, the lemon only appeared at the corners.
+2. **Traced back to:** `handleLemonClick()` in `GameScreenController.ts`, which calls `this.view.randomizeLemonPosition()`.
+3. **Traced back to:** `randomizeLemonPosition()` in `GameScreenView.ts`, where `randomX` and `randomY` are set from `minX`, `maxX`, `minY`, and `maxY`.
+4. **Buggy code:** The original lines were `Math.round(Math.random()) * (maxX - minX) + minX` and the same pattern for `randomY`. The rounding function was applied before we multipled the random value to the 
+
+### Confirming the fix
+
+After moving `Math.round` to cover the outside of this expression `Math.random()) * (maxX - minX) + minX` then it starting appearing out of the corners.
 
