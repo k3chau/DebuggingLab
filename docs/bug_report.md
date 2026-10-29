@@ -169,3 +169,29 @@ I thought the random formula was collapsing to the edges. `Math.round(Math.rando
 
 After moving `Math.round` to cover the outside of this expression `Math.random()) * (maxX - minX) + minX` then it starting appearing out of the corners.
 
+## Ticket 4: Stuck after the game ends
+
+### Actual cause
+
+**File / function:** `src/screens/GameScreen/GameScreenController.ts` / `endGame()`
+
+**What was wrong:** `endGame()` contained `this.stopTimer` without parentheses so the stop timer function never ran. 
+### Fix
+
+I called the function: `this.stopTimer()`. That runs `clearInterval` the first time the timer hits 0, so the game ends once.
+
+### How did you find it?
+
+After the timer hit 0, the same score kept being added about once a second, and the game-over sound kept playing. Staying on the results screen, then clicking Play Again and Start, did not leave the menu up or start a full new game. 
+
+#### Hypothesis testing
+
+**What hypothesis ultimately led you to identify the buggy code, and why?**
+
+I thought that the endgame function which was supposed to end the game 
+
+
+### Confirming the fix
+
+After changing it to `this.stopTimer()`, the game-over sound plays once and the score is saved once. Play Again returns to the menu and stays there, and the next game runs for the full duration.
+
